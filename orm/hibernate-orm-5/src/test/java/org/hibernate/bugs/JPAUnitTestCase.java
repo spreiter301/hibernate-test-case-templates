@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -134,9 +134,11 @@ public class JPAUnitTestCase {
 		entityManager.getTransaction().begin();
 
 		Parent parent = entityManager.find(Parent.class, parentId);
+		assertEquals("Ueli", parent.getName());
+		updateParent(parentId);
 		Parent parent2 = entityManager.find(Parent.class, parentId);
+		assertEquals("Ueli", parent2.getName());
 
-		assertNotNull(parent);
 		assertEquals(parent, parent2);
 		assertTrue(parent == parent2);
 
@@ -153,10 +155,19 @@ public class JPAUnitTestCase {
 
 		Parent parent3 = entityManager.find(Parent.class, parentId);
 
-		assertNotNull(parent3);
-		assertEquals(parent, parent3);
+		assertEquals("updated", parent3.getName());
+		assertNotEquals(parent.getName(), parent3.getName());
 		assertFalse(parent == parent3);
 
+		entityManager.getTransaction().commit();
+		entityManager.close();
+	}
+
+	private void updateParent(Long parentId) {
+		EntityManager entityManager = entityManagerFactory.createEntityManager();
+		entityManager.getTransaction().begin();
+		Parent parent = entityManager.find(Parent.class, parentId);
+		parent.setName("updated");
 		entityManager.getTransaction().commit();
 		entityManager.close();
 	}
@@ -218,7 +229,7 @@ public class JPAUnitTestCase {
 		assertFalse(Hibernate.isInitialized(parent.getChildren()));
 		parent.getChildren().forEach(System.out::println); // LAZY children werden hier initialisiert
 		assertTrue(Hibernate.isInitialized(parent.getChildren()));
-		entityManager.merge(parent); // Fehler passiert hier. parent ist bereits Persisten und wird beim Commit geupdatet
+		entityManager.merge(parent); // Fehler passiert hier. parent ist bereits Persistent und wird beim Commit geupdatet
 
 		entityManager.getTransaction().commit();
 		entityManager.close();
