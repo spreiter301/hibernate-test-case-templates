@@ -10,6 +10,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.RollbackException;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -218,6 +219,23 @@ public class JPAUnitTestCase {
 		parent.getChildren().forEach(System.out::println); // LAZY children werden hier initialisiert
 		assertTrue(Hibernate.isInitialized(parent.getChildren()));
 		entityManager.merge(parent); // Fehler passiert hier. parent ist bereits Persisten und wird beim Commit geupdatet
+
+		entityManager.getTransaction().commit();
+		entityManager.close();
+	}
+
+	@Test
+	public void clearPersistenceContext() {
+		EntityManager entityManager = entityManagerFactory.createEntityManager();
+		entityManager.getTransaction().begin();
+
+		IntStream.range(0, 1_000_000_000).forEach(i -> {
+			entityManager.persist(new Parent());
+			if (i % 1000 == 0) {
+				entityManager.flush();
+				entityManager.clear();
+			}
+		});
 
 		entityManager.getTransaction().commit();
 		entityManager.close();
